@@ -65,6 +65,7 @@ enum {
     NGX_RTMP_NOTIFY_SRV_MAX
 };
 
+#define DYNAMIC_URL
 
 typedef struct {
     ngx_url_t                                  *url[NGX_RTMP_NOTIFY_APP_MAX];
@@ -221,6 +222,41 @@ ngx_module_t  ngx_rtmp_notify_module = {
     NULL,                                   /* exit master */
     NGX_MODULE_V1_PADDING
 };
+
+
+
+#ifdef DYNAMIC_URL
+static void
+ngx_rtmp_notify_parse_urlstr(ngx_url_t *u, char *url, ngx_rtmp_session_t *s)
+{
+    size_t      add;
+    add = 0;
+
+    if (u == NULL) {
+        return;
+    }
+
+    if (ngx_strncasecmp((u_char *)url, (u_char *) "http://", 7) == 0) {
+        add = 7;
+    }
+
+    u->url.len = strlen((const char *)url) - add;
+    u->url.data = (u_char *)(url + add);
+    u->default_port = 80;
+    u->uri_part = 1;
+
+    if (ngx_parse_url(s->connection->pool, u) != NGX_OK) {
+        if (u->err) {
+            ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
+                              "%s in url \"%V\"", u->err, &u->url);
+
+        }
+    }
+
+    ngx_log_error(NGX_LOG_INFO, s->connection->log, 0,
+                              "refresh ip %s in url \"%V\"",inet_ntoa(((struct sockaddr_in *)(&u->sockaddr.sockaddr))->sin_addr) ,&u->url);
+}
+#endif
 
 
 static void *
@@ -1214,6 +1250,10 @@ ngx_rtmp_notify_update(ngx_event_t *e)
 
     ngx_memzero(&ci, sizeof(ci));
 
+    #ifdef DYNAMIC_URL
+    ngx_rtmp_notify_parse_urlstr(url, (char *)url->url.data, s);
+    #endif
+
     ci.url = url;
     ci.create = ngx_rtmp_notify_update_create;
     ci.handle = ngx_rtmp_notify_update_handle;
@@ -1307,7 +1347,12 @@ ngx_rtmp_notify_connect(ngx_rtmp_session_t *s, ngx_rtmp_connect_t *v)
 
     ngx_memzero(&ci, sizeof(ci));
 
+    #ifdef DYNAMIC_URL
+    ngx_rtmp_notify_parse_urlstr(url, (char *)url->url.data, s);
+    #endif
+
     ci.url = url;
+
     ci.create = ngx_rtmp_notify_connect_create;
     ci.handle = ngx_rtmp_notify_connect_handle;
     ci.arg = v;
@@ -1342,6 +1387,10 @@ ngx_rtmp_notify_disconnect(ngx_rtmp_session_t *s)
                   "notify: disconnect '%V'", &url->url);
 
     ngx_memzero(&ci, sizeof(ci));
+
+    #ifdef DYNAMIC_URL
+    ngx_rtmp_notify_parse_urlstr(url, (char *)url->url.data, s);
+    #endif
 
     ci.url = url;
     ci.create = ngx_rtmp_notify_disconnect_create;
@@ -1381,6 +1430,10 @@ ngx_rtmp_notify_publish(ngx_rtmp_session_t *s, ngx_rtmp_publish_t *v)
                   "notify: publish '%V'", &url->url);
 
     ngx_memzero(&ci, sizeof(ci));
+
+    #ifdef DYNAMIC_URL
+    ngx_rtmp_notify_parse_urlstr(url, (char *)url->url.data, s);
+    #endif
 
     ci.url = url;
     ci.create = ngx_rtmp_notify_publish_create;
@@ -1423,6 +1476,10 @@ ngx_rtmp_notify_play(ngx_rtmp_session_t *s, ngx_rtmp_play_t *v)
                   "notify: play '%V'", &url->url);
 
     ngx_memzero(&ci, sizeof(ci));
+
+    #ifdef DYNAMIC_URL
+    ngx_rtmp_notify_parse_urlstr(url, (char *)url->url.data, s);
+    #endif
 
     ci.url = url;
     ci.create = ngx_rtmp_notify_play_create;
@@ -1539,13 +1596,16 @@ ngx_rtmp_notify_done(ngx_rtmp_session_t *s, char *cbname, ngx_uint_t url_idx)
 
     ngx_memzero(&ci, sizeof(ci));
 
+    #ifdef DYNAMIC_URL
+    ngx_rtmp_notify_parse_urlstr(url, (char *)url->url.data, s);
+    #endif
+
     ci.url = url;
     ci.arg = &ds;
     ci.create = ngx_rtmp_notify_done_create;
 
     return ngx_rtmp_netcall_create(s, &ci);
 }
-
 
 static ngx_url_t *
 ngx_rtmp_notify_parse_url(ngx_conf_t *cf, ngx_str_t *url)
