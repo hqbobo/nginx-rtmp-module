@@ -23,8 +23,7 @@ ngx_rtmp_notify_parse_urlstr(ngx_url_t *u, char *url, ngx_rtmp_session_t *s)
 
 this function is going to refresh the ip for given url.
 
-###this function will be called in side of given functions below
-
+### this function will be called in side of given functions below
 functions                     |    event in config
 -|-
 ngx_rtmp_notify_update_handle  |   on_update
