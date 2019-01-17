@@ -23,14 +23,16 @@ ngx_rtmp_notify_parse_urlstr(ngx_url_t *u, char *url, ngx_rtmp_session_t *s)
 
 this function is going to refresh the ip for given url.
 
-this function will be called in side of given functions below
-functions                         event in config
-ngx_rtmp_notify_update_handle     on_update
-ngx_rtmp_notify_connect           on_connect
-ngx_rtmp_notify_disconnect
-ngx_rtmp_notify_publish           on_publish
-ngx_rtmp_notify_play              on_play
-ngx_rtmp_notify_done              on_done
+###this function will be called in side of given functions below
+
+functions                     |    event in config
+-|-
+ngx_rtmp_notify_update_handle  |   on_update
+ngx_rtmp_notify_connect        |   on_connect
+ngx_rtmp_notify_disconnect|
+ngx_rtmp_notify_publish        |   on_publish
+ngx_rtmp_notify_play          |    on_play
+ngx_rtmp_notify_done          |    on_done
 
 
 All those change is fit for my business, so i didn't refresh ip for all event.
